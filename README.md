@@ -1,14 +1,14 @@
-# Introduction
+## Introduction
 SAML2 based Authentication service for applications that are using keycloak as their identity provider. SAML 2.0 (Security Assertion Markup Language) is an 
 open standard created to provide cross-domain single sign-on (SSO). In other words, it allows a user to authenticate in a system and gain access to another system by providing proof of their authentication.
 
-# Configuration
+## Configuration
 
 The SAML client can be configured in samlclient.properties. For authentication, authenticate method can be invoked from SAMLExecutor class.
 username and password needs to be passed in authenticate method.
 eg: samlExecutor.authenticate("username", "password")
 
-## SAML Configuration Properties
+### SAML Configuration Properties
 
 saml.identity.provider.url = <identityProviderURL> //Here keycloak is the identity provider
 

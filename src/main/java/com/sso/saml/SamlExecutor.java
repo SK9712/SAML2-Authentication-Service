@@ -4,10 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 import com.sso.saml.builder.SamlRequestBuilder;
 import com.sso.saml.client.SamlClient;
 import com.sso.saml.util.SamlUtil;
@@ -17,6 +13,8 @@ import org.opensaml.saml2.core.AuthnRequest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 
@@ -26,8 +24,8 @@ public class SamlExecutor {
 
     private SamlRequestBuilder samlRequestBuilder = new SamlRequestBuilder();
 
-    public JsonObject authenticate(String username, String password) {
-        JsonObject result = new JsonObject();
+    public Map<String, Object> authenticate(String username, String password) {
+        Map<String, Object> result = new HashMap<>();
 
         try {
             Properties samlProperties = new Properties();
@@ -52,17 +50,17 @@ public class SamlExecutor {
                     idProviderMetaResp.getHeaders(), username, password);
 
             if (samlAuthResponse.getElementsByAttributeValue("name", "SAMLResponse").size() > 0) {
-                String samlJsonStr = decodeSamlResponse(samlAuthResponse);
+                String samlResponseData = decodeSamlResponse(samlProperties, samlAuthResponse);
 
-                result.addProperty("Status", "Success");
-                result.add("SAMLResponse", new Gson().fromJson(samlJsonStr, JsonElement.class));
+                result.put("Status", "Success");
+                result.put("SAMLResponse", samlResponseData);
 
                 if (Boolean.parseBoolean(SamlUtil.getSamlProperty(samlProperties,
                         "saml.processing.enable", "false")))
                     samlAuthResponse.forms().get(0).submit();
             } else {
-                result.addProperty("Status", "Failure");
-                result.addProperty("Reason", "invalid username or password");
+                result.put("Status", "Failure");
+                result.put("Reason", "invalid username or password");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -72,19 +70,18 @@ public class SamlExecutor {
         return result;
     }
 
-    private String decodeSamlResponse(Document samlAuthResponse) throws Exception {
+    private String decodeSamlResponse(Properties samlProperties, Document samlAuthResponse) throws Exception {
         String base64DecodedSamlResp = SamlUtil.base64Decode(samlAuthResponse.getElementsByAttributeValue("name", "SAMLResponse")
                 .get(0).attr("value"));
 
-        System.out.println("XML: " + base64DecodedSamlResp);
+        if (samlProperties.getProperty("saml.response.type", "xml")
+                .equalsIgnoreCase("json")) {
+            XmlMapper xmlMapper = new XmlMapper();
+            JsonNode jsonNode = xmlMapper.readTree(base64DecodedSamlResp.getBytes());
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(jsonNode);
+        }
 
-        XmlMapper xmlMapper = new XmlMapper();
-        JsonNode jsonNode = xmlMapper.readTree(base64DecodedSamlResp.getBytes());
-        ObjectMapper objectMapper = new ObjectMapper();
-        String samlJsonStr = objectMapper.writeValueAsString(jsonNode);
-
-        System.out.println("Json: " + samlJsonStr);
-
-        return samlJsonStr;
+        return base64DecodedSamlResp;
     }
 }

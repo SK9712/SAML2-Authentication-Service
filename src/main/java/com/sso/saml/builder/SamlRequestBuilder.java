@@ -16,6 +16,7 @@ import org.opensaml.xml.signature.Signature;
 import org.opensaml.xml.signature.SignatureConstants;
 import org.opensaml.xml.signature.impl.SignatureBuilder;
 
+import java.io.File;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -53,7 +54,8 @@ public class SamlRequestBuilder {
 
     private void setAuthnSignature(Properties samlProperties, AuthnRequest authnRequest) throws Exception {
         BasicCredential basicCredential = new BasicCredential();
-        basicCredential.setPrivateKey(SamlUtil.loadPrivateKey(SamlUtil.getSamlProperty(samlProperties,"saml.service.provider.keystore.path", System.getProperty("user.dir")),
+        basicCredential.setPrivateKey(SamlUtil.loadPrivateKey(SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.keystore.path",
+                        System.getProperty("user.dir") + File.separator + "keystore.jks"),
                 SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.url", "http://127.0.0.1:8010/realms/serviceprovider"),
                 SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.keystore.password", "password"),
                 SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.keystore.key.password", "password")));

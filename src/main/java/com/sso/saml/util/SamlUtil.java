@@ -33,7 +33,7 @@ public class SamlUtil {
         Marshaller marshaller = marshallerFactory.getMarshaller(xmlObject);
         Element samlObjectElement = marshaller.marshall(xmlObject);
 
-        if(samlSignature)
+        if (samlSignature)
             Signer.signObject(xmlObject.getSignature());
 
         // Transforming Element into String
@@ -59,7 +59,7 @@ public class SamlUtil {
         return (PrivateKey) keyStore.getKey(serviceProviderUrl, privateKeyPassword.toCharArray());
     }
 
-    public static String getSamlProperty(Properties properties, String propertyName, String defaultValue){
+    public static String getSamlProperty(Properties properties, String propertyName, String defaultValue) {
         if (properties.containsKey(propertyName) && !properties.getProperty(propertyName).isEmpty())
             return properties.getProperty(propertyName);
         return defaultValue;

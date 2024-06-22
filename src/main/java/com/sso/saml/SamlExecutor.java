@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-
 public class SamlExecutor {
 
     private SamlClient samlClient = new SamlClient();

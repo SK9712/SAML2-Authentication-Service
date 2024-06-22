@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.Properties;
 import java.util.UUID;
 
-
 public class SamlRequestBuilder {
 
     public AuthnRequest getSamlAuthnRequest(Properties samlProperties) throws Exception {

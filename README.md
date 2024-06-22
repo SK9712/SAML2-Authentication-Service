@@ -6,7 +6,7 @@ This is a SAML2 based Authentication service for applications that are using key
 
 The SAML client can be configured in samlclient.properties.
 
-# # SAML Configuration Properties
+## SAML Configuration Properties
 
 saml.identity.provider.url = <identityProviderURL> //Here keycloak is the identity provider
 

@@ -8,100 +8,60 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import org.jsoup.Jsoup;
+import com.sso.saml.builder.SamlRequestBuilder;
+import com.sso.saml.client.SamlClient;
+import com.sso.saml.util.SamlUtil;
 import org.jsoup.nodes.Document;
 
-import org.opensaml.DefaultBootstrap;
-import org.opensaml.common.SAMLVersion;
-import org.opensaml.common.impl.SAMLObjectContentReference;
 import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.core.impl.AuthnRequestBuilder;
-import org.opensaml.saml2.core.impl.IssuerBuilder;
-import org.opensaml.xml.Configuration;
-import org.opensaml.xml.encryption.EncryptionConstants;
-import org.opensaml.xml.io.Marshaller;
-import org.opensaml.xml.io.MarshallerFactory;
-import org.opensaml.xml.security.credential.BasicCredential;
-import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.SignatureConstants;
-import org.opensaml.xml.signature.Signer;
-import org.opensaml.xml.signature.impl.SignatureBuilder;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 
-import org.w3c.dom.Element;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import java.io.FileInputStream;
-import java.io.StringWriter;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.util.Base64;
-import java.util.UUID;
-
+import java.util.Properties;
 
 @Component
 public class SamlExecutor {
-
-    private RestTemplate restTemplate = new RestTemplate();
-
     @Autowired
-    private Environment environment;
+    private SamlClient samlClient;
+    @Autowired
+    private SamlRequestBuilder samlRequestBuilder;
 
-    public JsonObject processApiRequest(JsonObject request) {
-        String username = request.get("username").getAsString();
-        String password = request.get("password").getAsString();
-
+    public JsonObject authenticate(String username, String password) {
         JsonObject result = new JsonObject();
 
         try {
-            DefaultBootstrap.bootstrap();
-            AuthnRequest samlAuthnRequest = getSamlAuthnRequest();
+            Properties samlProperties = new Properties();
+            samlProperties.load(new ClassPathResource("samlclient.properties").getInputStream());
+
+            AuthnRequest samlAuthnRequest = samlRequestBuilder.getSamlAuthnRequest(samlProperties);
 
             /* Setting jsonRequestString as StringEntity */
-            String base64EncodedRequest = base64EncodeXMLObject(samlAuthnRequest);
+            String base64EncodedRequest = SamlUtil.base64EncodeXMLObject(samlAuthnRequest,
+                    Boolean.parseBoolean(SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.signature.enable", "false")));
 
             /* Getting SAML identity provider meta-info */
-            ResponseEntity<String> idProviderMetaResp = getIdentityProviderAuthPortal(base64EncodedRequest,
-                    environment.getProperty("saml.identity.provider.url", "http://127.0.0.1:8080/auth/realms/identityprovider/protocol/saml"));
+            ResponseEntity<String> idProviderMetaResp = samlClient.getIdentityProviderAuthPortal(base64EncodedRequest,
+                    SamlUtil.getSamlProperty(samlProperties, "saml.identity.provider.url",
+                            "http://127.0.0.1:8080/auth/realms/identityprovider/protocol/saml"));
 
             /* Redirecting to identity provider authentication portal */
-            ResponseEntity<String> authPortalResp = redirectToAuthPortal(idProviderMetaResp.getHeaders());
+            ResponseEntity<String> authPortalResp = samlClient.redirectToAuthPortal(idProviderMetaResp.getHeaders());
 
             /* Authenticating user with identity provider and getting SAML Response */
-            Document samlAuthResponse = authenticateUser(authPortalResp.getBody(), idProviderMetaResp.getHeaders(), username, password);
+            Document samlAuthResponse = samlClient.authenticateUser(authPortalResp.getBody(),
+                    idProviderMetaResp.getHeaders(), username, password);
 
             if (samlAuthResponse.getElementsByAttributeValue("name", "SAMLResponse").size() > 0) {
-                String base64DecodedSamlResp = base64Decode(samlAuthResponse.getElementsByAttributeValue("name", "SAMLResponse")
-                        .get(0).attr("value"));
-
-                System.out.println("XML: " + base64DecodedSamlResp);
-
-                XmlMapper xmlMapper = new XmlMapper();
-                JsonNode jsonNode = xmlMapper.readTree(base64DecodedSamlResp.getBytes());
-                ObjectMapper objectMapper = new ObjectMapper();
-                String samlJsonStr = objectMapper.writeValueAsString(jsonNode);
-
-                System.out.println("Json: " + samlJsonStr);
+                String samlJsonStr = decodeSamlResponse(samlAuthResponse);
 
                 result.addProperty("Status", "Success");
                 result.add("SAMLResponse", new Gson().fromJson(samlJsonStr, JsonElement.class));
 
-                if (Boolean.parseBoolean(environment.getProperty("saml.processing.enable", "false")))
+                if (Boolean.parseBoolean(SamlUtil.getSamlProperty(samlProperties,
+                        "saml.processing.enable", "false")))
                     samlAuthResponse.forms().get(0).submit();
             } else {
                 result.addProperty("Status", "Failure");
@@ -115,151 +75,19 @@ public class SamlExecutor {
         return result;
     }
 
-    private AuthnRequest getSamlAuthnRequest() throws Exception {
-        AuthnRequest authnRequest = ((AuthnRequestBuilder) Configuration.getBuilderFactory().getBuilder(
-                AuthnRequest.DEFAULT_ELEMENT_NAME)).buildObject();
+    private String decodeSamlResponse(Document samlAuthResponse) throws Exception {
+        String base64DecodedSamlResp = SamlUtil.base64Decode(samlAuthResponse.getElementsByAttributeValue("name", "SAMLResponse")
+                .get(0).attr("value"));
 
-        authnRequest.setDestination(environment.getProperty("saml.identity.provider.url", "http://127.0.0.1:8080/auth/realms/identityprovider/protocol/saml"));
+        System.out.println("XML: " + base64DecodedSamlResp);
 
-        /* Your consumer URL (where you want to receive SAML response) */
-        authnRequest.setAssertionConsumerServiceURL(environment.getProperty("saml.response.consumer.url", "http://127.0.0.1:8010/realms/serviceprovider/broker/SAML-IDP/endpoint"));
+        XmlMapper xmlMapper = new XmlMapper();
+        JsonNode jsonNode = xmlMapper.readTree(base64DecodedSamlResp.getBytes());
+        ObjectMapper objectMapper = new ObjectMapper();
+        String samlJsonStr = objectMapper.writeValueAsString(jsonNode);
 
-        /* Unique request ID */
-        authnRequest.setID("_" + UUID.randomUUID());
-        authnRequest.setVersion(SAMLVersion.VERSION_20);
-        authnRequest.setIssueInstant(new org.joda.time.DateTime());
-        authnRequest.setProtocolBinding("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST");
+        System.out.println("Json: " + samlJsonStr);
 
-        if (Boolean.parseBoolean(environment.getProperty("saml.service.provider.signature.enable", "false")))
-            setAuthnSignature(authnRequest);
-
-        /* Your issuer URL */
-        authnRequest.setIssuer(buildIssuer(environment.getProperty("saml.service.provider.url",
-                "http://127.0.0.1:8010/realms/serviceprovider")));
-
-        return authnRequest;
-    }
-
-    private void setAuthnSignature(AuthnRequest authnRequest) throws Exception {
-        BasicCredential basicCredential = new BasicCredential();
-        basicCredential.setPrivateKey(loadPrivateKey(environment.getProperty("saml.service.provider.keystore.path")));
-
-        SignatureBuilder signatureBuilder = new SignatureBuilder();
-        Signature signature = signatureBuilder.buildObject();
-        signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
-        signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_OMIT_COMMENTS);
-        signature.setSigningCredential(basicCredential);
-
-        authnRequest.setSignature(signature);
-        ((SAMLObjectContentReference) signature.getContentReferences().get(0))
-                .setDigestAlgorithm(EncryptionConstants.ALGO_ID_DIGEST_SHA256);
-    }
-
-    private ResponseEntity<String> getIdentityProviderAuthPortal(String base64EncodedRequest, String idProviderUrl) {
-        try {
-            MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-            map.add("SAMLRequest", base64EncodedRequest);
-
-            HttpHeaders requestHeaders = new HttpHeaders();
-
-            requestHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, requestHeaders);
-
-            return restTemplate.exchange(idProviderUrl, HttpMethod.POST,
-                    requestEntity, String.class);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("Exception while sending SAML Request to identity provider", ex);
-        }
-    }
-
-    private ResponseEntity<String> redirectToAuthPortal(HttpHeaders portalHeaders) {
-        try {
-            HttpHeaders requestHeaders = new HttpHeaders();
-
-            portalHeaders.get("Set-Cookie").forEach(cookie -> requestHeaders.add("cookie", cookie));
-
-            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(null, requestHeaders);
-
-            return restTemplate.exchange(URLDecoder.decode(portalHeaders.get("Location").get(0), StandardCharsets.UTF_8.name()),
-                    HttpMethod.POST, requestEntity, String.class);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("Exception while redirecting to identity provider portal...", ex);
-        }
-    }
-
-    private Document authenticateUser(String authPortal, HttpHeaders portalHeaders, String username, String password) {
-        try {
-            HttpHeaders requestHeaders = new HttpHeaders();
-            requestHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            portalHeaders.get("Set-Cookie").forEach(cookie -> requestHeaders.add("cookie", cookie));
-
-            MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-            map.add("username", username);
-            map.add("password", password);
-
-            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, requestHeaders);
-
-            Document htmlcode = Jsoup.parse(authPortal);
-            String postLink = htmlcode.forms().get(0).attr("action");
-
-            ResponseEntity<String> authResponse = restTemplate.exchange(URLDecoder.decode(postLink, StandardCharsets.UTF_8.name()),
-                    HttpMethod.POST,
-                    requestEntity, String.class);
-
-            return Jsoup.parse(authResponse.getBody());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("Exception while authenticating user through identity provider...", ex);
-        }
-    }
-
-    private Issuer buildIssuer(String issuerValue) {
-        Issuer issuer = ((IssuerBuilder) Configuration.getBuilderFactory().getBuilder(
-                Issuer.DEFAULT_ELEMENT_NAME)).buildObject();
-        issuer.setValue(issuerValue);
-        return issuer;
-    }
-
-    private String base64EncodeXMLObject(AuthnRequest xmlObject) throws Exception {
-        MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
-        Marshaller marshaller = marshallerFactory.getMarshaller(xmlObject);
-        Element samlObjectElement = marshaller.marshall(xmlObject);
-
-        if (Boolean.parseBoolean(environment.getProperty("saml.service.provider.signature.enable", "false")))
-            Signer.signObject(xmlObject.getSignature());
-
-        // Transforming Element into String
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-
-        StreamResult result = new StreamResult(new StringWriter());
-        DOMSource source = new DOMSource(samlObjectElement);
-        transformer.transform(source, result);
-        String xmlString = result.getWriter().toString();
-
-        // next, base64 encode it
-        String base64EncodedMessage = Base64.getEncoder().encodeToString(xmlString.getBytes("UTF-8"));
-
-        return base64EncodedMessage;
-    }
-
-    private String base64Decode(String base64Message) {
-        byte[] xmlByteData = Base64.getDecoder().decode(base64Message);
-
-        return new String(xmlByteData, StandardCharsets.UTF_8);
-    }
-
-    private PrivateKey loadPrivateKey(String filePath) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance("JKS");
-        keyStore.load(new FileInputStream(filePath),
-                environment.getProperty("saml.service.provider.keystore.password", "ted").toCharArray());
-
-        return (PrivateKey) keyStore.getKey(environment.getProperty("saml.service.provider.url",
-                "http://127.0.0.1:8010/realms/serviceprovider"),
-                environment.getProperty("saml.service.provider.keystore.key.password", "ted").toCharArray());
+        return samlJsonStr;
     }
 }

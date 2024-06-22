@@ -1,13 +1,13 @@
-package com.test.poc;
+package com.sso.saml;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PocApplication {
+public class SamlApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PocApplication.class, args);
+		SpringApplication.run(SamlApplication.class, args);
 	}
 
 }

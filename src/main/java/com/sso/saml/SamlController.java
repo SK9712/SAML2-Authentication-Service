@@ -1,4 +1,4 @@
-package com.test.poc;
+package com.sso.saml;
 
 import com.google.gson.JsonObject;
 

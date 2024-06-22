@@ -14,20 +14,17 @@ import com.sso.saml.util.SamlUtil;
 import org.jsoup.nodes.Document;
 
 import org.opensaml.saml2.core.AuthnRequest;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.*;
-import org.springframework.stereotype.Component;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Properties;
 
-@Component
+
 public class SamlExecutor {
-    @Autowired
-    private SamlClient samlClient;
-    @Autowired
-    private SamlRequestBuilder samlRequestBuilder;
+
+    private SamlClient samlClient = new SamlClient();
+
+    private SamlRequestBuilder samlRequestBuilder = new SamlRequestBuilder();
 
     public JsonObject authenticate(String username, String password) {
         JsonObject result = new JsonObject();

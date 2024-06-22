@@ -1,6 +1,7 @@
 package com.sso.saml.builder;
 
 import com.sso.saml.util.SamlUtil;
+
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.impl.SAMLObjectContentReference;
@@ -14,12 +15,11 @@ import org.opensaml.xml.security.credential.BasicCredential;
 import org.opensaml.xml.signature.Signature;
 import org.opensaml.xml.signature.SignatureConstants;
 import org.opensaml.xml.signature.impl.SignatureBuilder;
-import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 import java.util.UUID;
 
-@Component
+
 public class SamlRequestBuilder {
 
     public AuthnRequest getSamlAuthnRequest(Properties samlProperties) throws Exception {

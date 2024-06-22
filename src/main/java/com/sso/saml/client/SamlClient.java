@@ -3,7 +3,7 @@ package com.sso.saml.client;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.http.*;
-import org.springframework.stereotype.Component;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -11,7 +11,6 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-@Component
 public class SamlClient {
     private RestTemplate restTemplate = new RestTemplate();
 

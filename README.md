@@ -4,7 +4,9 @@ This is a SAML2 based Authentication service for applications that are using key
 
 # Configuration
 
-The SAML client can be configured in samlclient.properties.
+The SAML client can be configured in samlclient.properties. For authentication, authenticate method can be invoked from SAMLExecutor class.
+username and password needs to be passed in authenticate method.
+eg: samlExecutor.authenticate("username", "password")
 
 ## SAML Configuration Properties
 

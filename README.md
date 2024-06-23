@@ -3,7 +3,7 @@ SAML2 based Authentication service for applications that are using keycloak as t
 open standard created to provide cross-domain single sign-on (SSO). In other words, it allows a user to authenticate in a system and gain access to another system by providing proof of their authentication.
 
 ## Setting Up the Service Provider
-Inorder to use the SAML2 authentication service, the following dependency need to be added in the application(Service Provider):
+Inorder to use the SAML2 authentication service, the following dependency need to be added in the service provider application:
 ```
 
 <dependency>

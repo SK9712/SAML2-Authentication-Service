@@ -10,7 +10,7 @@ username and password needs to be passed in authenticate method.<br />
 
 ### SAML Configuration Properties
 
-**saml.identity.provider.url** = [identityProviderURL] //Here keycloak is the identity provider
+**saml.identity.provider.url** = <<identityProviderURL>> //Here keycloak is the identity provider
 
 **saml.response.consumer.url** = <consumerUrl> //here, we specify consumer url where SAMLResponse need to be recieved
 

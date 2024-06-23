@@ -14,7 +14,7 @@ username and password needs to be passed in authenticate method.<br />
 
 **saml.response.consumer.url** = [consumerUrl] //here, we specify consumer url where SAMLResponse need to be recieved
 
-**saml.service.provider.name** = [serviceProviderName] //here, we specify the application id which has been registered in identityProvider
+**saml.service.provider.name** = [serviceProviderId] //here, we specify the application id which has been registered in identityProvider
 
 **saml.service.provider.signature.enable** = [BooleanValue] //here we set whether the SAMLRequest need to have client digital signature
 

@@ -1,4 +1,4 @@
-## Introduction
+## Overview
 SAML2 based Authentication service for applications that are using keycloak as their identity provider. SAML 2.0 (Security Assertion Markup Language) is an 
 open standard created to provide cross-domain single sign-on (SSO). In other words, it allows a user to authenticate in a system and gain access to another system by providing proof of their authentication.
 

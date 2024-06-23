@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import com.sso.saml.builder.SamlRequestBuilder;
+import com.sso.saml.builder.SamlUserCredential;
 import com.sso.saml.client.SamlClient;
 import com.sso.saml.util.SamlUtil;
 import org.jsoup.nodes.Document;
@@ -24,14 +25,13 @@ public class SamlExecutor {
     private SamlRequestBuilder samlRequestBuilder = new SamlRequestBuilder();
 
     /**
-     * Authenticates a user using SAML and returns the authentication result.
+     * Authenticates a user using SAML credentials and returns the authentication result.
      *
-     * @param username The username of the user to be authenticated.
-     * @param password The password of the user to be authenticated.
+     * @param samlUserCredential The SAML user credentials containing username and password.
      * @return Map<String, Object> A map containing the authentication status and SAML response data if authentication is successful.
      * @throws RuntimeException If an error occurs during the SAML authentication process.
      */
-    public Map<String, Object> authenticate(String username, String password) {
+    public Map<String, Object> authenticate(SamlUserCredential samlUserCredential) {
         Map<String, Object> result = new HashMap<>();
 
         try {
@@ -41,7 +41,7 @@ public class SamlExecutor {
             AuthnRequest samlAuthnRequest = samlRequestBuilder.getSamlAuthnRequest(samlProperties);
 
             Document samlAuthResponse = getSamlAuthResponse(samlAuthnRequest,
-                    samlProperties, username, password);
+                    samlProperties, samlUserCredential);
 
             if (samlAuthResponse.getElementsByAttributeValue("name", "SAMLResponse").size() > 0) {
                 String samlResponseData = decodeSamlResponse(samlProperties, samlAuthResponse);
@@ -68,14 +68,13 @@ public class SamlExecutor {
      * Retrieves the SAML authentication response document after authenticating the user with the identity provider.
      *
      * @param samlAuthnRequest The SAML authentication request object.
-     * @param samlProperties   Properties containing SAML configuration settings.
-     * @param username         The username of the user to be authenticated.
-     * @param password         The password of the user to be authenticated.
+     * @param samlProperties Properties containing SAML configuration settings.
+     * @param samlUserCredential The SAML user credentials containing username and password.
      * @return Document The HTML document containing the SAML authentication response.
      * @throws Exception If an error occurs during the SAML authentication process.
      */
     private Document getSamlAuthResponse(AuthnRequest samlAuthnRequest, Properties samlProperties,
-                                         String username, String password) throws Exception {
+                                         SamlUserCredential samlUserCredential) throws Exception {
         String base64EncodedRequest = SamlUtil.base64EncodeXMLObject(samlAuthnRequest,
                 Boolean.parseBoolean(SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.signature.enable", "false")));
 
@@ -89,7 +88,7 @@ public class SamlExecutor {
 
         /* Authenticating user with identity provider and getting SAML Response */
         return samlClient.authenticateUser(authPortalResp.getBody(),
-                idProviderMetaResp.getHeaders(), username, password);
+                idProviderMetaResp.getHeaders(), samlUserCredential);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.sso.saml.client;
 
+import com.sso.saml.builder.SamlUserCredential;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.http.*;
@@ -65,17 +66,16 @@ public class SamlClient {
     }
 
     /**
-     * Authenticates a user by submitting their credentials to the authentication portal.
+     * Authenticates a user through the identity provider using the provided credentials.
      *
-     * @param authPortal    The HTML content of the authentication portal.
-     * @param portalHeaders The headers received from a previous authentication step, containing cookies.
-     * @param username      The username of the user to be authenticated.
-     * @param password      The password of the user to be authenticated.
-     * @return Document The HTML document returned by the identity provider after authentication.
-     * @throws RuntimeException If an error occurs during user authentication.
+     * @param authPortal The HTML content of the authentication portal where the user is redirected.
+     * @param portalHeaders The HTTP headers received from the authentication portal.
+     * @param samlUserCredential The SAML user credentials containing username and password.
+     * @return Document The HTML document containing the authentication response from the identity provider.
+     * @throws RuntimeException If an error occurs during the authentication process.
      */
     public Document authenticateUser(String authPortal, HttpHeaders portalHeaders,
-                                     String username, String password) {
+                                     SamlUserCredential samlUserCredential) {
         try {
             HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -83,8 +83,8 @@ public class SamlClient {
             portalHeaders.get("Set-Cookie").forEach(cookie -> requestHeaders.add("cookie", cookie));
 
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-            map.add("username", username);
-            map.add("password", password);
+            map.add("username", samlUserCredential.getUsername());
+            map.add("password", samlUserCredential.getPassword());
 
             HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(map, requestHeaders);
 

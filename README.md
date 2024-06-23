@@ -18,7 +18,7 @@ Inorder to use the SAML2 authentication service, the following dependency needs 
 
 The SAML client can be configured in **samlclient.properties** file. For authentication, authenticate method can be invoked from SAMLExecutor class.
 username and password needs to be passed in authenticate method.<br />
-**eg: samlExecutor.authenticate("username", "password");**
+**eg: samlExecutor.authenticate(new SamlUserCredential("username", "password"));**
 
 ### SAML Configuration Properties
 

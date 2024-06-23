@@ -4,7 +4,7 @@ open standard created to provide cross-domain single sign-on (SSO). In other wor
 
 ## Configuration
 
-The SAML client can be configured in **samlclient.properties**. For authentication, authenticate method can be invoked from SAMLExecutor class.
+The SAML client can be configured in **samlclient.properties** file. For authentication, authenticate method can be invoked from SAMLExecutor class.
 username and password needs to be passed in authenticate method.<br />
 **eg: samlExecutor.authenticate("username", "password");**
 

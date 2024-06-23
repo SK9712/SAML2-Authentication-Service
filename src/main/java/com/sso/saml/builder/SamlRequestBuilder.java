@@ -45,8 +45,8 @@ public class SamlRequestBuilder {
             setAuthnSignature(samlProperties, authnRequest);
 
         /* Your issuer URL */
-        authnRequest.setIssuer(buildIssuer(SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.url",
-                "http://127.0.0.1:8010/realms/serviceprovider")));
+        authnRequest.setIssuer(buildIssuer(SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.name",
+                "master")));
 
         return authnRequest;
     }
@@ -55,7 +55,7 @@ public class SamlRequestBuilder {
         BasicCredential basicCredential = new BasicCredential();
         basicCredential.setPrivateKey(SamlUtil.loadPrivateKey(SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.keystore.path",
                         System.getProperty("user.dir") + File.separator + "keystore.jks"),
-                SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.url", "http://127.0.0.1:8010/realms/serviceprovider"),
+                SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.name", "master"),
                 SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.keystore.password", "password"),
                 SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.keystore.key.password", "password")));
 

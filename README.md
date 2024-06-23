@@ -4,12 +4,15 @@ open standard created to provide cross-domain single sign-on (SSO). In other wor
 
 ## Setting Up the Service Provider
 Inorder to use the SAML2 authentication service, the following dependency need to be added:
+```
 
 <dependency>
     <groupId>com.sso.saml</groupId>
     <artifactId>saml-client</artifactId>
     <version>1.0</version>
 </dependency>
+
+```
 
 ## Configuration
 

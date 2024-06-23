@@ -2,6 +2,15 @@
 SAML2 based Authentication service for applications that are using keycloak as their identity provider. SAML 2.0 (Security Assertion Markup Language) is an 
 open standard created to provide cross-domain single sign-on (SSO). In other words, it allows a user to authenticate in a system and gain access to another system by providing proof of their authentication.
 
+## Setting Up the Service Provider
+Inorder to use the SAML2 authentication service, the following dependency need to be added:
+
+<dependency>
+    <groupId>com.sso.saml</groupId>
+    <artifactId>saml-client</artifactId>
+    <version>1.0</version>
+</dependency>
+
 ## Configuration
 
 The SAML client can be configured in **samlclient.properties** file. For authentication, authenticate method can be invoked from SAMLExecutor class.

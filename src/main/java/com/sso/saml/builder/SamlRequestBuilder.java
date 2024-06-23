@@ -22,6 +22,13 @@ import java.util.UUID;
 
 public class SamlRequestBuilder {
 
+    /**
+     * Generates a SAML authentication request (AuthnRequest) using the provided SAML properties.
+     *
+     * @param samlProperties Properties containing SAML configuration settings.
+     * @return AuthnRequest The generated SAML authentication request.
+     * @throws Exception If an error occurs during the creation of the AuthnRequest.
+     */
     public AuthnRequest getSamlAuthnRequest(Properties samlProperties) throws Exception {
         DefaultBootstrap.bootstrap();
 
@@ -51,6 +58,13 @@ public class SamlRequestBuilder {
         return authnRequest;
     }
 
+    /**
+     * Sets the signature on the given SAML authentication request (AuthnRequest) using the specified SAML properties.
+     *
+     * @param samlProperties Properties containing SAML configuration settings, including keystore details.
+     * @param authnRequest   The SAML authentication request to be signed.
+     * @throws Exception If an error occurs during the signing process, such as loading the private key.
+     */
     private void setAuthnSignature(Properties samlProperties, AuthnRequest authnRequest) throws Exception {
         BasicCredential basicCredential = new BasicCredential();
         basicCredential.setPrivateKey(SamlUtil.loadPrivateKey(SamlUtil.getSamlProperty(samlProperties, "saml.service.provider.keystore.path",
@@ -70,6 +84,12 @@ public class SamlRequestBuilder {
                 .setDigestAlgorithm(EncryptionConstants.ALGO_ID_DIGEST_SHA256);
     }
 
+    /**
+     * Builds an Issuer object for a SAML authentication request.
+     *
+     * @param issuerValue The value of the issuer, typically the entity ID of the Service Provider.
+     * @return Issuer The constructed Issuer object.
+     */
     private Issuer buildIssuer(String issuerValue) {
         Issuer issuer = ((IssuerBuilder) Configuration.getBuilderFactory().getBuilder(
                 Issuer.DEFAULT_ELEMENT_NAME)).buildObject();

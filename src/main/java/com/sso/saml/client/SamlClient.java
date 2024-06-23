@@ -14,6 +14,14 @@ import java.nio.charset.StandardCharsets;
 public class SamlClient {
     private RestTemplate restTemplate = new RestTemplate();
 
+    /**
+     * Sends a SAML authentication request to the specified identity provider URL and returns the response.
+     *
+     * @param base64EncodedRequest The SAML request encoded in Base64.
+     * @param idProviderUrl        The URL of the identity provider to which the SAML request is sent.
+     * @return ResponseEntity<String> The response from the identity provider.
+     * @throws RuntimeException If an error occurs while sending the SAML request.
+     */
     public ResponseEntity<String> getIdentityProviderAuthPortal(String base64EncodedRequest, String idProviderUrl) {
         try {
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -33,6 +41,13 @@ public class SamlClient {
         }
     }
 
+    /**
+     * Redirects to the authentication portal using the provided headers.
+     *
+     * @param portalHeaders The headers received from a previous authentication step, containing cookies and location URL.
+     * @return ResponseEntity<String> The response from the identity provider portal.
+     * @throws RuntimeException If an error occurs while redirecting to the identity provider portal.
+     */
     public ResponseEntity<String> redirectToAuthPortal(HttpHeaders portalHeaders) {
         try {
             HttpHeaders requestHeaders = new HttpHeaders();
@@ -49,7 +64,18 @@ public class SamlClient {
         }
     }
 
-    public Document authenticateUser(String authPortal, HttpHeaders portalHeaders, String username, String password) {
+    /**
+     * Authenticates a user by submitting their credentials to the authentication portal.
+     *
+     * @param authPortal    The HTML content of the authentication portal.
+     * @param portalHeaders The headers received from a previous authentication step, containing cookies.
+     * @param username      The username of the user to be authenticated.
+     * @param password      The password of the user to be authenticated.
+     * @return Document The HTML document returned by the identity provider after authentication.
+     * @throws RuntimeException If an error occurs during user authentication.
+     */
+    public Document authenticateUser(String authPortal, HttpHeaders portalHeaders,
+                                     String username, String password) {
         try {
             HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
